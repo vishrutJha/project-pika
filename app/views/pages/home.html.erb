@@ -1,0 +1,40 @@
+<div class="row-fluid" id="matrix" style="min-height: 1000px; padding: 10px; background-color: black; color:green;">
+  <canvas id="canvas" style="background-color:#000; display:block;" height="1000" width="1800"></canvas>
+</div>
+<div class="modal fade" id="codeModal" tabindex="-1" data-backdrop="false" data-backdrop="static" role="dialog" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" style="color:white;">The Code Peeks!!! Enter the code...</h5>
+      </div>
+      <div class="modal-body">
+        <%= form_tag code_path, method: :get do |f| %>
+          <input id="codeBox1" type="number" maxlength="1" onkeyup="onKeyUpEvent(1, event)" onfocus="onFocusEvent(1)"/>
+          <input id="codeBox2" type="number" maxlength="1" onkeyup="onKeyUpEvent(2, event)" onfocus="onFocusEvent(2)"/>
+          <input id="codeBox3" type="number" maxlength="1" onkeyup="onKeyUpEvent(3, event)" onfocus="onFocusEvent(3)"/>
+          <input id="codeBox4" type="number" maxlength="1" onkeyup="onKeyUpEvent(4, event)" onfocus="onFocusEvent(4)"/>
+          <input id="codeBox5" type="number" maxlength="1" onkeyup="onKeyUpEvent(5, event)" onfocus="onFocusEvent(5)"/>
+          <input id="codeBox6" type="number" maxlength="1" onkeyup="onKeyUpEvent(6, event)" onfocus="onFocusEvent(6)"/>
+          <button type="submit" onclick="checkCode(); return false;">></button>
+        <% end %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script type="text/javascript">
+  var api_url = "<%= code_path %>";
+  initMatrix();
+  $("#codeModal").modal("show");
+  setTimeout(function(){
+    $("#codeModal").effect("shake");
+  }, 2000)
+
+  function checkCode(){
+    var code = getCode();
+    $.get(api_url, {code: code}, function(data){
+      console.log(data);
+      validateResponse(data.result);
+    });
+  }
+</script>
