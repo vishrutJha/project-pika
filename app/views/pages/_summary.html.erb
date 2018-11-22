@@ -1,4 +1,4 @@
-<%= @answer_sess.score %> out of <%= Question.count %>
+<div id="summaryText"><%= @answer_sess.score %> out of <%= Question.count %></div>
 <br/>
 <a href="#" type="button" class="close" data-dismiss="modal" aria-label="Close">
   Booo! I'm bored!! show me what's behind!!
@@ -7,7 +7,7 @@
 <script type="text/javascript">
   var pika_url = "<%= pika_path %>";
   $("#questTitle").html("and so ends the quest...");
-
+  $("#footerText").html("Yeaaah.. you made it.. "+$("#summaryText").html());
 
   var timeleft = 10;
   var downloadTimer = setInterval(function(){
@@ -22,13 +22,14 @@
     $("#matrix").hide();
     $.get(pika_url, function(pika){
       console.log("Got Pika",pika);
-      for(var i in pika.content){
-        (function(index) {
-          setTimeout(function() {
-              document.getElementById("pikabee").innerHTML+=pika.content[index]; 
-          }, 10);
-        })(i);
-      }
+      document.getElementById("pikabee").innerHTML+=pika.content; 
+      // for(var i in pika.content){
+      //   (function(index) {
+      //     setTimeout(function() {
+      //         document.getElementById("pikabee").innerHTML+=pika.content[index]; 
+      //     }, 10);
+      //   })(i);
+      // }
     });
   };
 
