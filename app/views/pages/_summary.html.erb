@@ -1,0 +1,37 @@
+<%= @answer_sess.score %> out of <%= Question.count %>
+<br/>
+<a href="#" type="button" class="close" data-dismiss="modal" aria-label="Close">
+  Booo! I'm bored!! show me what's behind!!
+</a>
+
+<script type="text/javascript">
+  var pika_url = "<%= pika_path %>";
+  $("#questTitle").html("and so ends the quest...");
+
+
+  var timeleft = 10;
+  var downloadTimer = setInterval(function(){
+    document.getElementById("timeLeft").innerHTML = --timeleft;
+    if(timeleft <= 0){
+      clearInterval(downloadTimer);
+      $("#codeModal").modal("hide");
+    }
+  },1000);
+
+  function drawPika(){
+    $("#matrix").hide();
+    $.get(pika_url, function(pika){
+      console.log("Got Pika",pika);
+      for(var i in pika.content){
+        (function(index) {
+          setTimeout(function() {
+              document.getElementById("pikabee").innerHTML+=pika.content[index]; 
+          }, 10);
+        })(i);
+      }
+    });
+  };
+
+  drawPika();
+
+</script>

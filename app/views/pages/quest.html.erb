@@ -1,0 +1,47 @@
+<style type="text/css">
+  .modal-content {
+    background-color: rgba(10, 10, 10, 0.9) !important;
+    border-color: green;
+    color: lime;
+  }
+  .modal-header{
+    border-bottom: 1px solid green;
+    font-style: italic;
+  }
+  .close {
+    color:green;
+    float: left;
+    font-size: 18px;
+    margin-top: 10px;
+    text-shadow: 0 0 0 #000
+  }
+</style>
+
+<div class="row-fluid" id="matrix" style="min-height: 1000px; padding: 10px; background-color: black; color:green;">
+  <canvas id="canvas" style="background-color:#000; display:block;" height="1000" width="1800"></canvas>
+</div>
+<pre id="pikabee" style="background-color: black; color:green;overflow: hidden; font-size: 11px;"></pre>
+<div class="modal fade" id="codeModal" tabindex="-1" data-backdrop="false" data-backdrop="static" role="dialog" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 id="questTitle" class="modal-title">And now begins the quest ...</h5>
+      </div>
+      <div id="questContent" class="modal-body">
+        
+      </div>
+    </div>
+  </div>
+</div>
+
+<script type="text/javascript">
+  var api_url = "<%= next_question_path %>";
+  initMatrix();
+  $("#codeModal").modal("show");
+
+  function startQuest(){
+    initQuest(api_url); 
+  }
+
+  startQuest();
+</script>

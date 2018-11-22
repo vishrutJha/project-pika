@@ -1,11 +1,6 @@
 @import "bootstrap";
 @import "jquery-ui";
 
-.modal-content {
-  background-color: rgba(10, 10, 10, 0.4) !important;
-  border-color: white;
-}
-
 button[type=submit] {
   background-color: black;
   color: green;
@@ -14,6 +9,30 @@ button[type=submit] {
   font-size: 25px;
   text-align: center;
   border: 1px solid #111;
+}
+
+#canvas{
+  border: solid 1px green;  
+  width: 100%;
+}
+
+@media only screen and (max-width: 800px) {
+  #canvas{
+    border: solid 1px black;  
+    width: 300%;
+  }
+}
+
+.btn-sq {
+  width: 30px !important;
+  height: 30px !important;
+  margin-top: 15px;
+  text-align: center !important;
+}
+
+.hint {
+  font-weight: bold;
+  letter-spacing: 1px;
 }
 
 button[type=submit]:hover {

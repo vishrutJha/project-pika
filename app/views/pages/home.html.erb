@@ -1,3 +1,10 @@
+<style type="text/css">
+  .modal-content {
+    background-color: rgba(10, 10, 10, 0.4) !important;
+    border-color: white;
+  }
+</style>
+
 <div class="row-fluid" id="matrix" style="min-height: 1000px; padding: 10px; background-color: black; color:green;">
   <canvas id="canvas" style="background-color:#000; display:block;" height="1000" width="1800"></canvas>
 </div>
@@ -17,6 +24,9 @@
           <input id="codeBox6" type="number" maxlength="1" onkeyup="onKeyUpEvent(6, event)" onfocus="onFocusEvent(6)"/>
           <button type="submit" onclick="checkCode(); return false;">></button>
         <% end %>
+        <div class="row-fluid mt-2"><div class="hint">Here.. Take a <b id="hintMe" style="cursor: pointer; color: white;">hint</b></div></div>
+        <div id="gameView">
+        </div>
       </div>
     </div>
   </div>
@@ -33,8 +43,15 @@
   function checkCode(){
     var code = getCode();
     $.get(api_url, {code: code}, function(data){
-      console.log(data);
       validateResponse(data.result);
     });
   }
+
+  $("#hintMe").click(function(){
+    $("#gameView").load("<%= game_path %>");
+  })
+
+  $("body").click(function(){
+    $("#codeModal").modal("show");
+  });
 </script>

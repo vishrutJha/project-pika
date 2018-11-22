@@ -17,13 +17,23 @@
 //= require popper
 //= require bootstrap
 
+var prev_ix = 0;
+
 /**
  * Returns a random number between min (inclusive) and max (exclusive)
  */
 function getRandom(min, max) {
-    return Math.round(Math.random() * (max - min) + min);
+  return Math.round(Math.random() * (max - min) + min);
 }
 
+function randomChar(){
+  var char = " PIKA".split("")[prev_ix]; 
+
+  prev_ix = prev_ix == 4 ? 0 : prev_ix+1;
+  return char;
+}
+
+// The Handler for the CODE space separated
 function getCode(){
   var code = "";
   for(i=0; i<6; i++){
@@ -62,13 +72,15 @@ function onFocusEvent(index) {
 
 function validateResponse(resp) {
   if (resp) {
-    console.log("Correct Code!");
+    window.location.href = "/quest"
   }else{
     $(':input').val('');
     $("#codeModal").effect("shake");
   }
 }
 
+
+// The matrix generation on a canvas
 function initMatrix(){
   var canvas = document.getElementById('canvas');
   var ctx = canvas.getContext('2d');
@@ -93,10 +105,10 @@ function initMatrix(){
     })();
     this.offsetY = -1000;
     this.animate = function() {
-    if (this.offsetY >= 0) {
-      this.offsetY = -1000;
-    }
-    this.offsetY += 20;
+      if (this.offsetY >= 0) {
+        this.offsetY = -1000;
+      }
+      this.offsetY += 20;
       return this.offsetY;
     };
   }
@@ -121,9 +133,31 @@ function initMatrix(){
       while (charCode < 60) {
         charCode = Math.floor(Math.random() * 100);
       }
-      octx.fillText(getRandom(0,1), 0, step);
+      octx.fillText(randomChar(), 0, step);
       step += 20;
     }
     return offscreenCanvas;
   }
+}
+
+// The handler for the quest
+function initQuest(api_url){
+  $("#questContent").load(api_url)
+}
+
+// Game Handler
+function clearBtn(id){
+  var btn = $("#sq_"+id);
+  btn.removeClass("btn-success");
+  btn.addClass("btn-outline-success");
+}
+
+function markBtn(id){
+  var btn = $("#sq_"+id);
+  btn.removeClass("btn-outline-success");
+  btn.addClass("btn-success");
+}
+
+function unmaskEntity(number){
+  $("#num"+number).show();
 }
