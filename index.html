@@ -4,32 +4,39 @@
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
     <!-- Added viewport meta tag for responsive design -->
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <style>
         @import url(https://fonts.googleapis.com/css?family=Tangerine);
 
-        html, body {
-            margin: 0;
-            padding: 0;
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
+        html {
+            /* Removed overflow: hidden; to allow scrolling if necessary */
+            /* overflow: hidden; */
+            /* touch-action: none; */
+            /* content-zooming: none; */
         }
 
         body {
-            background: #fff;
-            font-family: 'Tangerine', cursive;
-            position: relative;
-        }
-
-        #game {
-            position: absolute;
-            top: 0;
-            left: 0;
+            /* Removed position: absolute; */
+            margin: 0;
+            padding: 0;
+            /* Removed fixed width and height */
             width: 100%;
             height: 100%;
             background: #fff;
+            font-family: 'Tangerine', cursive;
+        }
+
+        #game {
+            /* Adjusted to relative positioning */
+            /* position: absolute; */
+            /* width: 100%; */
+            /* height: 100%; */
+            max-width: 80%;
+            height: auto;
+            background: #fff;
+            display: block;
+            margin: 0 auto;
         }
 
         #game .body {
@@ -48,21 +55,26 @@
             cursor: pointer;
         }
 
+        /* Added responsive styles */
+        @media screen and (max-width: 600px) {
+            #game {
+                width: 100%;
+                height: auto;
+            }
+        }
+
         /* Center the main title */
         #main-title {
-            position: absolute;
-            top: 10px;
-            left: 0;
-            width: 100%;
             text-align: center;
             font-size: 8vmin;
+            margin: 20px 0;
             user-select: none;
             -webkit-user-select: none;
         }
 
         /* Adjusted #bar styles */
         #bar {
-            position: absolute;
+            position: fixed;
             bottom: 10px;
             left: 0;
             width: 100%;
@@ -80,15 +92,19 @@
         }
 
         #reset {
+            /* position: absolute;
+            left: 10px; */
         }
 
         #title {
+            /* position: absolute;
+            right: 10px; */
             cursor: default;
         }
 
         /* Adjust select element styles */
         #difficulty-select {
-            position: absolute;
+            position: fixed;
             top: 10px;
             right: 10px;
             font-size: 4vmin;
@@ -609,9 +625,7 @@
         <div id="reset">Reset</div>
         <div id="title">PikaDay 24</div>
     </div>
-
-
-
+    <button id="fullscreen" style="display: none;" onclick="openFullscreen();">Fullscreen</button>
     <script>
         ! function () {
 
@@ -713,7 +727,7 @@
                     }
                 }
                 // place random plots (10 more than in the original)
-                for (var i = 0; i < 12; i++) {
+                for (var i = 0; i < 15; i++) {
                     var rx = Math.floor(Math.random() * 15);
                     var ry = Math.floor(Math.random() * 15);
                     if (rx != cat.x && ry != cat.y) {
@@ -981,7 +995,29 @@
             }
             // start
             newGame();
+    
         }();
+
+        function openFullscreen() {
+            var elem = document.documentElement; // This is the whole page
+
+            if (elem.requestFullscreen) {
+                elem.requestFullscreen();
+            } else if (elem.mozRequestFullScreen) { // Firefox
+                elem.mozRequestFullScreen();
+            } else if (elem.webkitRequestFullscreen) { // Chrome, Safari, Opera
+                elem.webkitRequestFullscreen();
+            } else if (elem.msRequestFullscreen) { // IE/Edge
+                elem.msRequestFullscreen();
+            }
+        }
+
+        
+        (function(){
+            document.body.addEventListener("click", function() {
+                openFullscreen();
+            });
+        })()
     </script>
 </body>
 
