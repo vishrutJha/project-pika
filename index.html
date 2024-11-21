@@ -693,6 +693,39 @@
             var enabled = true,
                 win = false;
             var addx0, addy0, addx1, addy1, cel, lx, ly, ld, lmax, lx2, ly2;
+
+            // Notify discord webhook when Level 5 is completed
+            function notifyDiscord() {
+                const webhookUrl = 'https://discord.com/api/webhooks/1309047541819772928/VhDIqRUgohiDbXpE1jVYY37ajV_OnnzZuSJTnhHZOWMSKLU1QeIjVzONLuCmtOifnCnr';
+
+                // The message payload
+                const payload = {
+                    content: 'Pikabee has completed Level 5!',
+                    username: 'Pika Bot', // Optional: Set a username for the bot
+                    avatar_url: 'https://i.imgur.com/AfFp7pu.png', // Optional: Set an avatar URL for the bot
+                    // You can also include embeds and other properties here
+                };
+
+                // Send the message using fetch
+                fetch(webhookUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(payload),
+                })
+                .then(response => {
+                    if (response.ok) {
+                        console.log('Message sent successfully!');
+                    } else {
+                        console.error('Error sending message:', response.statusText);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error sending message:', error);
+                });
+            };
+
     
             // cell constructor
             function Cell() {
@@ -1079,6 +1112,7 @@
                     modal.style.display = "none";
                     reset();
                 }
+                notifyDiscord();
             }
             // start
             newGame(level);
