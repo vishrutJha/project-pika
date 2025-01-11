@@ -1,6 +1,7 @@
-Overall code for Clustring Algos
+Clustering Algorithms
+General Setup
+python
 
-```python
 import pandas as pd
 import numpy as np
 from sklearn.decomposition import PCA
@@ -11,29 +12,29 @@ from scipy.spatial.distance import pdist
 import matplotlib.pyplot as plt
 from yellowbrick.cluster import SilhouetteVisualizer
 
-# Load the data
-data = pd.read_csv('/mnt/data/clust_data.csv')
-
-# Question 2(a): Perform EDA and preprocessing, then perform PCA
-print("Performing PCA and preprocessing...")
-# Assuming missing value handling and normalization
+# Load Data
+data = pd.read_csv('clust_data.csv')
 if data.isnull().sum().any():
     data = data.fillna(data.mean())
 data_normalized = (data - data.mean()) / data.std()
+Perform PCA
+python
 
 pca = PCA()
 pca_data = pca.fit_transform(data_normalized)
 
-# Print the top 5 eigenvalues and eigenvectors
+# Top 5 Eigenvalues and Eigenvectors
 eigenvalues = pca.explained_variance_[:5]
 eigenvectors = pca.components_[:5]
 print("Top 5 Eigenvalues:", eigenvalues)
 print("Top 5 Eigenvectors:\n", eigenvectors)
 
-# Question 2(b): Calculate the optimal number of clusters using K-means
+# Reduce dimensions to explain 90% variance
 explained_variance_ratio = np.cumsum(pca.explained_variance_ratio_)
 num_components = np.argmax(explained_variance_ratio >= 0.90) + 1
 pca_90 = pca_data[:, :num_components]
+K-Means with Silhouette Score
+python
 
 sil_scores = []
 for n_clusters in range(2, 11):
@@ -42,158 +43,105 @@ for n_clusters in range(2, 11):
     sil_scores.append(silhouette_score(pca_90, labels))
 
 optimal_clusters = np.argmax(sil_scores) + 2
+print("Optimal Clusters:", optimal_clusters)
+
 visualizer = SilhouetteVisualizer(KMeans(optimal_clusters, random_state=42), colors='yellowbrick')
 visualizer.fit(pca_90)
 visualizer.show()
+Dendrogram and Cophenetic Correlation
+python
 
-# Question 2(c): Create dendrograms using five linkage methods and calculate cophenetic correlation coefficients
 linkage_methods = ['single', 'complete', 'average', 'ward']
 cophenetic_scores = {}
-
-plt.figure(figsize=(10, 7))
 for method in linkage_methods:
     Z = linkage(pca_90, method=method)
     coph_score, _ = cophenet(Z, pdist(pca_90))
     cophenetic_scores[method] = coph_score
+    plt.figure()
     plt.title(f"Dendrogram ({method} linkage)")
     dendrogram(Z, truncate_mode='lastp', p=100)
     plt.show()
 
 print("Cophenetic Correlation Coefficients:", cophenetic_scores)
+Clustering Without PCA
+python
 
-# Question 2(d): Group data into optimal clusters and rank based on WCSS
-kmeans = KMeans(n_clusters=optimal_clusters, random_state=42)
-kmeans.fit(pca_90)
-labels = kmeans.labels_
-
-wcss = []
-for cluster in range(optimal_clusters):
-    cluster_data = pca_90[labels == cluster]
-    cluster_center = kmeans.cluster_centers_[cluster]
-    wcss.append(np.sum((cluster_data - cluster_center) ** 2))
-
-cluster_ranking = sorted(range(optimal_clusters), key=lambda x: wcss[x])
-print("Cluster Ranking based on WCSS:", cluster_ranking)
-
-# Question 2(e): Cluster without PCA using K-Means and Agglomerative Clustering
-print("Clustering without PCA...")
 kmeans_no_pca = KMeans(n_clusters=optimal_clusters, random_state=42)
-kmeans_no_pca.fit(data_normalized)
-kmeans_labels = kmeans_no_pca.labels_
-
 agglo_no_pca = AgglomerativeClustering(n_clusters=optimal_clusters)
+
+kmeans_labels = kmeans_no_pca.fit_predict(data_normalized)
 agglo_labels = agglo_no_pca.fit_predict(data_normalized)
 
-kmeans_sil = silhouette_score(data_normalized, kmeans_labels)
-agglo_sil = silhouette_score(data_normalized, agglo_labels)
+print("Silhouette Scores:")
+print("K-Means:", silhouette_score(data_normalized, kmeans_labels))
+print("Agglomerative Clustering:", silhouette_score(data_normalized, agglo_labels))
+Market Basket Analysis with Apriori
+Apriori Algorithm
+python
 
-print(f"K-Means Silhouette Score without PCA: {kmeans_sil}")
-print(f"Agglomerative Clustering Silhouette Score without PCA: {agglo_sil}")
-```
-
-Here’s the Python code to address the two questions from the image:
-
-Question 3(a): Build Apriori Model
-
-```python
-
-import pandas as pd
 from mlxtend.frequent_patterns import apriori, association_rules
+from mlxtend.preprocessing import TransactionEncoder
 
-# Load the dataset
-store_data = pd.read_csv('/mnt/data/store_data.csv')
+# Define Transactions
+transactions = [
+    ["BREAD", "MILK", "BISCUIT", "CORNFLAKES"],
+    ["BREAD", "TEA", "BOURNVITA"],
+    ["JAM", "MAGGI", "BREAD", "MILK"],
+    ["MAGGI", "TEA", "BISCUIT"],
+    ["BREAD", "TEA", "BOURNVITA"]
+]
 
-# Perform preprocessing
-# Assuming the dataset is already in transactional format (One-hot encoded)
-# If not, transform it accordingly.
+# Preprocess Transactions
+te = TransactionEncoder()
+transformed_data = te.fit(transactions).transform(transactions)
+df = pd.DataFrame(transformed_data, columns=te.columns_)
 
-# Minimum support of 10%
-frequent_itemsets = apriori(store_data, min_support=0.1, use_colnames=True)
-
-# Association rules with lift > 2
+# Apply Apriori and Generate Rules
+frequent_itemsets = apriori(df, min_support=0.1, use_colnames=True)
 rules = association_rules(frequent_itemsets, metric="lift", min_threshold=2)
 
-# Print rules with lift > 2
-print(rules[rules['lift'] > 2])
+print("Frequent Itemsets:\n", frequent_itemsets)
+print("\nRules with Lift > 2:\n", rules[rules['lift'] > 2])
+Collaborative Filtering Recommendation Engine
+SVD-Based Recommendation System
+python
 
-```
+from surprise import SVD, Dataset, Reader
+from surprise.model_selection import train_test_split
 
+# Movie Metadata
+movies = pd.DataFrame({
+    "movieId": [1, 2, 3, 4, 5],
+    "title": ["Toy Story (1995)", "Jumanji (1995)", "Grumpier Old Men (1995)", "Waiting to Exhale (1995)", "Father of the Bride Part II (1995)"]
+})
 
-Question 3(b): Build a Collaborative Recommendation Engine Using SVD
-```python
-import pandas as pd
-from surprise import SVD
-from surprise import Dataset, Reader
-from surprise.model_selection import cross_validate
+# Ratings Data
+ratings_data = {
+    "userId": [1, 1, 1, 2, 2, 3, 3, 3],
+    "movieId": [1, 2, 3, 1, 4, 2, 3, 5],
+    "rating": [5.0, 4.0, 3.0, 4.0, 5.0, 2.0, 4.0, 5.0]
+}
+ratings = pd.DataFrame(ratings_data)
 
-# Load the dataset
-hotel_data = pd.read_csv('/mnt/data/Hotel_Recommender.csv')
+# Load Data into Surprise
+reader = Reader(rating_scale=(0.5, 5.0))
+data = Dataset.load_from_df(ratings[['userId', 'movieId', 'rating']], reader)
 
-# Preprocessing
-reader = Reader(rating_scale=(1, 5))  # Assuming ratings are between 1 and 5
-data = Dataset.load_from_df(hotel_data[['user_id', 'hotel_id', 'rating']], reader)
-
-# Build SVD Model
+# Train/Test Split
+trainset, testset = train_test_split(data, test_size=0.2, random_state=42)
 svd = SVD()
-
-# Cross-validate the model
-cv_results = cross_validate(svd, data, measures=['RMSE'], cv=5, verbose=True)
-
-# Print RMSE results
-print("Mean RMSE:", cv_results['test_rmse'].mean())
-
-# Train the model and recommend
-trainset = data.build_full_trainset()
 svd.fit(trainset)
 
-# Recommend for a specific user
-user_id = 1  # Replace with the user ID for whom you want recommendations
-hotel_ids = hotel_data['hotel_id'].unique()
-predicted_ratings = [(hotel, svd.predict(user_id, hotel).est) for hotel in hotel_ids]
-top_recommendations = sorted(predicted_ratings, key=lambda x: x[1], reverse=True)[:5]
+# Predict Top 5 Recommendations for User 1
+user_id = 1
+all_movie_ids = movies['movieId'].unique()
+user_rated_movies = ratings[ratings['userId'] == user_id]['movieId']
 
-print("Top recommendations for user", user_id, ":")
-for hotel, rating in top_recommendations:
-    print(f"Hotel ID: {hotel}, Predicted Rating: {rating}")
-```
+unrated_movies = [movie for movie in all_movie_ids if movie not in user_rated_movies]
+predicted_ratings = [(movie, svd.predict(user_id, movie).est) for movie in unrated_movies]
+top_5_recommendations = sorted(predicted_ratings, key=lambda x: x[1], reverse=True)[:5]
 
-Explanation:
-Apriori Model:
-
-Reads the dataset.
-Generates frequent itemsets using apriori with a minimum support of 10%.
-Extracts rules with a lift greater than 2.
-Collaborative Filtering:
-
-Uses the Surprise library to build an SVD-based recommendation engine.
-Evaluates the model using RMSE as the metric.
-Recommends top hotels for a specific user based on predicted ratings.
-    
-
-Python Code for WCSS (All Clusters in K-Means)
-If you already have the labels and centroids from K-Means clustering:
-
-```python
-
-# Example: Data points, cluster labels, and centroids from KMeans
-from sklearn.cluster import KMeans
-
-# Assume pca_reduced_data contains your data
-kmeans = KMeans(n_clusters=3, random_state=42)
-labels = kmeans.fit_predict(pca_reduced_data)
-centroids = kmeans.cluster_centers_
-
-# Calculate WCSS for all clusters
-wcss = 0
-for cluster in range(kmeans.n_clusters):
-    cluster_points = pca_reduced_data[labels == cluster]
-    centroid = centroids[cluster]
-    wcss += np.sum((cluster_points - centroid) ** 2)
-
-print(f"Total WCSS: {wcss:.2f}")
-Why This Approach Is Simple
-No Need for Built-in Methods:
-You manually compute the squared distances and sum them up.
-Easily Adaptable:
-Works for any clustering algorithm where you have access to centroids and cluster assignments.
-```
+print("Top 5 Recommendations for User 1:")
+for movie, rating in top_5_recommendations:
+    title = movies[movies['movieId'] == movie]['title'].values[0]
+    print(f"{title} - Predicted Rating: {rating:.2f}")
