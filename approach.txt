@@ -1,0 +1,199 @@
+Overall code for Clustring Algos
+
+```python
+import pandas as pd
+import numpy as np
+from sklearn.decomposition import PCA
+from sklearn.cluster import KMeans, AgglomerativeClustering
+from sklearn.metrics import silhouette_score, cophenet
+from scipy.cluster.hierarchy import dendrogram, linkage
+from scipy.spatial.distance import pdist
+import matplotlib.pyplot as plt
+from yellowbrick.cluster import SilhouetteVisualizer
+
+# Load the data
+data = pd.read_csv('/mnt/data/clust_data.csv')
+
+# Question 2(a): Perform EDA and preprocessing, then perform PCA
+print("Performing PCA and preprocessing...")
+# Assuming missing value handling and normalization
+if data.isnull().sum().any():
+    data = data.fillna(data.mean())
+data_normalized = (data - data.mean()) / data.std()
+
+pca = PCA()
+pca_data = pca.fit_transform(data_normalized)
+
+# Print the top 5 eigenvalues and eigenvectors
+eigenvalues = pca.explained_variance_[:5]
+eigenvectors = pca.components_[:5]
+print("Top 5 Eigenvalues:", eigenvalues)
+print("Top 5 Eigenvectors:\n", eigenvectors)
+
+# Question 2(b): Calculate the optimal number of clusters using K-means
+explained_variance_ratio = np.cumsum(pca.explained_variance_ratio_)
+num_components = np.argmax(explained_variance_ratio >= 0.90) + 1
+pca_90 = pca_data[:, :num_components]
+
+sil_scores = []
+for n_clusters in range(2, 11):
+    kmeans = KMeans(n_clusters=n_clusters, random_state=42)
+    labels = kmeans.fit_predict(pca_90)
+    sil_scores.append(silhouette_score(pca_90, labels))
+
+optimal_clusters = np.argmax(sil_scores) + 2
+visualizer = SilhouetteVisualizer(KMeans(optimal_clusters, random_state=42), colors='yellowbrick')
+visualizer.fit(pca_90)
+visualizer.show()
+
+# Question 2(c): Create dendrograms using five linkage methods and calculate cophenetic correlation coefficients
+linkage_methods = ['single', 'complete', 'average', 'ward']
+cophenetic_scores = {}
+
+plt.figure(figsize=(10, 7))
+for method in linkage_methods:
+    Z = linkage(pca_90, method=method)
+    coph_score, _ = cophenet(Z, pdist(pca_90))
+    cophenetic_scores[method] = coph_score
+    plt.title(f"Dendrogram ({method} linkage)")
+    dendrogram(Z, truncate_mode='lastp', p=100)
+    plt.show()
+
+print("Cophenetic Correlation Coefficients:", cophenetic_scores)
+
+# Question 2(d): Group data into optimal clusters and rank based on WCSS
+kmeans = KMeans(n_clusters=optimal_clusters, random_state=42)
+kmeans.fit(pca_90)
+labels = kmeans.labels_
+
+wcss = []
+for cluster in range(optimal_clusters):
+    cluster_data = pca_90[labels == cluster]
+    cluster_center = kmeans.cluster_centers_[cluster]
+    wcss.append(np.sum((cluster_data - cluster_center) ** 2))
+
+cluster_ranking = sorted(range(optimal_clusters), key=lambda x: wcss[x])
+print("Cluster Ranking based on WCSS:", cluster_ranking)
+
+# Question 2(e): Cluster without PCA using K-Means and Agglomerative Clustering
+print("Clustering without PCA...")
+kmeans_no_pca = KMeans(n_clusters=optimal_clusters, random_state=42)
+kmeans_no_pca.fit(data_normalized)
+kmeans_labels = kmeans_no_pca.labels_
+
+agglo_no_pca = AgglomerativeClustering(n_clusters=optimal_clusters)
+agglo_labels = agglo_no_pca.fit_predict(data_normalized)
+
+kmeans_sil = silhouette_score(data_normalized, kmeans_labels)
+agglo_sil = silhouette_score(data_normalized, agglo_labels)
+
+print(f"K-Means Silhouette Score without PCA: {kmeans_sil}")
+print(f"Agglomerative Clustering Silhouette Score without PCA: {agglo_sil}")
+```
+
+Here’s the Python code to address the two questions from the image:
+
+Question 3(a): Build Apriori Model
+
+```python
+
+import pandas as pd
+from mlxtend.frequent_patterns import apriori, association_rules
+
+# Load the dataset
+store_data = pd.read_csv('/mnt/data/store_data.csv')
+
+# Perform preprocessing
+# Assuming the dataset is already in transactional format (One-hot encoded)
+# If not, transform it accordingly.
+
+# Minimum support of 10%
+frequent_itemsets = apriori(store_data, min_support=0.1, use_colnames=True)
+
+# Association rules with lift > 2
+rules = association_rules(frequent_itemsets, metric="lift", min_threshold=2)
+
+# Print rules with lift > 2
+print(rules[rules['lift'] > 2])
+
+```
+
+
+Question 3(b): Build a Collaborative Recommendation Engine Using SVD
+```python
+import pandas as pd
+from surprise import SVD
+from surprise import Dataset, Reader
+from surprise.model_selection import cross_validate
+
+# Load the dataset
+hotel_data = pd.read_csv('/mnt/data/Hotel_Recommender.csv')
+
+# Preprocessing
+reader = Reader(rating_scale=(1, 5))  # Assuming ratings are between 1 and 5
+data = Dataset.load_from_df(hotel_data[['user_id', 'hotel_id', 'rating']], reader)
+
+# Build SVD Model
+svd = SVD()
+
+# Cross-validate the model
+cv_results = cross_validate(svd, data, measures=['RMSE'], cv=5, verbose=True)
+
+# Print RMSE results
+print("Mean RMSE:", cv_results['test_rmse'].mean())
+
+# Train the model and recommend
+trainset = data.build_full_trainset()
+svd.fit(trainset)
+
+# Recommend for a specific user
+user_id = 1  # Replace with the user ID for whom you want recommendations
+hotel_ids = hotel_data['hotel_id'].unique()
+predicted_ratings = [(hotel, svd.predict(user_id, hotel).est) for hotel in hotel_ids]
+top_recommendations = sorted(predicted_ratings, key=lambda x: x[1], reverse=True)[:5]
+
+print("Top recommendations for user", user_id, ":")
+for hotel, rating in top_recommendations:
+    print(f"Hotel ID: {hotel}, Predicted Rating: {rating}")
+```
+
+Explanation:
+Apriori Model:
+
+Reads the dataset.
+Generates frequent itemsets using apriori with a minimum support of 10%.
+Extracts rules with a lift greater than 2.
+Collaborative Filtering:
+
+Uses the Surprise library to build an SVD-based recommendation engine.
+Evaluates the model using RMSE as the metric.
+Recommends top hotels for a specific user based on predicted ratings.
+    
+
+Python Code for WCSS (All Clusters in K-Means)
+If you already have the labels and centroids from K-Means clustering:
+
+```python
+
+# Example: Data points, cluster labels, and centroids from KMeans
+from sklearn.cluster import KMeans
+
+# Assume pca_reduced_data contains your data
+kmeans = KMeans(n_clusters=3, random_state=42)
+labels = kmeans.fit_predict(pca_reduced_data)
+centroids = kmeans.cluster_centers_
+
+# Calculate WCSS for all clusters
+wcss = 0
+for cluster in range(kmeans.n_clusters):
+    cluster_points = pca_reduced_data[labels == cluster]
+    centroid = centroids[cluster]
+    wcss += np.sum((cluster_points - centroid) ** 2)
+
+print(f"Total WCSS: {wcss:.2f}")
+Why This Approach Is Simple
+No Need for Built-in Methods:
+You manually compute the squared distances and sum them up.
+Easily Adaptable:
+Works for any clustering algorithm where you have access to centroids and cluster assignments.
+```
