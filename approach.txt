@@ -1,147 +1,310 @@
-Clustering Algorithms
-General Setup
-python
+# %% [markdown]
+# **1a) What do you mean by NLP? List 4 real-world applications of NLP.**
+# 
+# - **NLP Definition**:
+#   - Natural Language Processing (NLP) is a branch of artificial intelligence that enables machines to understand, interpret, and generate human language in a meaningful way.
+# 
+# - **4 Real-world Applications**:
+#   1. **Sentiment Analysis**:
+#      - Example: Analyzing customer reviews to determine whether they are positive or negative.
+#   2. **Machine Translation**:
+#      - Example: Google Translate converting text from one language to another.
+#   3. **Chatbots and Virtual Assistants**:
+#      - Example: Conversational agents like ChatGPT or Alexa answering user queries.
+#   4. **Spam Email Filtering**:
+#      - Example: Gmail using NLP techniques to classify emails as spam or non-spam.
+# 
+# **1b) What are Large Language Models (LLMs)? List any four limitations/drawbacks of LLMs.**
+# 
+# - **LLMs Definition**:
+#   - Large Language Models (LLMs) are AI models with billions of parameters trained on massive datasets to understand and generate human-like text. Examples include GPT, BERT, and T5.
+# 
+# - **4 Limitations/Drawbacks**:
+#   1. **Data Bias**:
+#      - LLMs can inherit biases present in their training data, leading to biased outputs.
+#   2. **High Computational Cost**:
+#      - LLMs require significant computational resources and memory for training and inference.
+#   3. **Lack of Factual Accuracy**:
+#      - They may generate incorrect or nonsensical information confidently.
+#   4. **Ethical Concerns**:
+#      - Potential misuse for creating deepfakes, misinformation, or spam content.
+# 
+# **1c) Discuss RNN cell and its drawback. How LSTM overcomes RNN drawbacks?**
+# 
+# - **RNN (Recurrent Neural Network) Cell**:
+#   - RNNs are a type of neural network that process sequences by passing information from one time step to the next.
+#   - They are used in tasks like time-series forecasting, machine translation, and speech recognition.
+# 
+# - **Drawback of RNN**:
+#   1. **Vanishing Gradient Problem**:
+#      - RNNs struggle to retain information over long sequences due to the gradients becoming very small during backpropagation.
+#   2. **Lack of Long-Term Memory**:
+#      - They fail to capture dependencies in sequences that are far apart.
+# 
+# - **How LSTMs Overcome RNN Drawbacks**:
+#   1. **Memory Cell**:
+#      - LSTMs introduce a memory cell that can retain information over long time steps, addressing the vanishing gradient problem.
+#   2. **Gating Mechanisms**:
+#      - LSTMs use gates (input, forget, output) to control the flow of information, enabling the model to decide what to retain and what to discard.
+# 
+# **1d) Explain Named Entity Recognition (NER) with an example.**
+# 
+# - **NER Definition**:
+#   - Named Entity Recognition (NER) is an NLP technique that identifies and classifies entities in text into predefined categories such as **person names**, **locations**, **organizations**, and **dates**.
+# 
+# - **Example**:
+#   - Input Sentence: "Barack Obama was born in Hawaii in 1961."
+#   - NER Output:
+#     - `Barack Obama` → PERSON
+#     - `Hawaii` → LOCATION
+#     - `1961` → DATE
+# 
+# NER is used in applications like information extraction, resume parsing, and question-answering systems.
 
-import pandas as pd
+# %%
 import numpy as np
-from sklearn.decomposition import PCA
-from sklearn.cluster import KMeans, AgglomerativeClustering
-from sklearn.metrics import silhouette_score, cophenet
-from scipy.cluster.hierarchy import dendrogram, linkage
-from scipy.spatial.distance import pdist
+import pandas as pd
 import matplotlib.pyplot as plt
-from yellowbrick.cluster import SilhouetteVisualizer
+import seaborn as sns
 
-# Load Data
-data = pd.read_csv('clust_data.csv')
-if data.isnull().sum().any():
-    data = data.fillna(data.mean())
-data_normalized = (data - data.mean()) / data.std()
-Perform PCA
-python
+from wordcloud import WordCloud
+import nltk
 
-pca = PCA()
-pca_data = pca.fit_transform(data_normalized)
+# %%
+df = pd.read_csv("reviews.csv")
+df.head()
 
-# Top 5 Eigenvalues and Eigenvectors
-eigenvalues = pca.explained_variance_[:5]
-eigenvectors = pca.components_[:5]
-print("Top 5 Eigenvalues:", eigenvalues)
-print("Top 5 Eigenvectors:\n", eigenvectors)
+# %%
+df.duplicated().sum()
+# No duplicates
+df.drop_duplicates(inplace=True)
 
-# Reduce dimensions to explain 90% variance
-explained_variance_ratio = np.cumsum(pca.explained_variance_ratio_)
-num_components = np.argmax(explained_variance_ratio >= 0.90) + 1
-pca_90 = pca_data[:, :num_components]
-K-Means with Silhouette Score
-python
+# %%
+nltk.download('stopwords')
 
-sil_scores = []
-for n_clusters in range(2, 11):
-    kmeans = KMeans(n_clusters=n_clusters, random_state=42)
-    labels = kmeans.fit_predict(pca_90)
-    sil_scores.append(silhouette_score(pca_90, labels))
+# %%
+import re
 
-optimal_clusters = np.argmax(sil_scores) + 2
-print("Optimal Clusters:", optimal_clusters)
+stopwords = nltk.corpus.stopwords.words('english')
+def preprocess_text(text):
+  # Remove special characters and convert to lowercase
+  text = re.sub(r'[^a-zA-Z0-9\s]','',text).lower()
+  tokens = text.split()
+  tokens = [word for word in tokens if word not in stopwords]
+  return tokens 
 
-visualizer = SilhouetteVisualizer(KMeans(optimal_clusters, random_state=42), colors='yellowbrick')
-visualizer.fit(pca_90)
-visualizer.show()
-Dendrogram and Cophenetic Correlation
-python
+# %%
+# Preprocess text
+# 1. remove punctuations, symbols, special characters
+df2 = pd.DataFrame(df[["Text","Sentiment"]], columns=["Text","Sentiment"])
+df2["tokens"] = df2["Text"].apply(lambda x: preprocess_text(x))
+df2.head()
 
-linkage_methods = ['single', 'complete', 'average', 'ward']
-cophenetic_scores = {}
-for method in linkage_methods:
-    Z = linkage(pca_90, method=method)
-    coph_score, _ = cophenet(Z, pdist(pca_90))
-    cophenetic_scores[method] = coph_score
-    plt.figure()
-    plt.title(f"Dendrogram ({method} linkage)")
-    dendrogram(Z, truncate_mode='lastp', p=100)
-    plt.show()
+# %%
+df2['cleaned_text'] = df2['tokens'].apply(lambda x: ' '.join(x))
+df2.head()
 
-print("Cophenetic Correlation Coefficients:", cophenetic_scores)
-Clustering Without PCA
-python
+# %%
+!pip install textblob
 
-kmeans_no_pca = KMeans(n_clusters=optimal_clusters, random_state=42)
-agglo_no_pca = AgglomerativeClustering(n_clusters=optimal_clusters)
+# %%
+from textblob import TextBlob
 
-kmeans_labels = kmeans_no_pca.fit_predict(data_normalized)
-agglo_labels = agglo_no_pca.fit_predict(data_normalized)
+def get_senti(text):
+  blob = TextBlob(text)
+  return blob.sentiment.polarity
 
-print("Silhouette Scores:")
-print("K-Means:", silhouette_score(data_normalized, kmeans_labels))
-print("Agglomerative Clustering:", silhouette_score(data_normalized, agglo_labels))
-Market Basket Analysis with Apriori
-Apriori Algorithm
-python
+# %%
+from sklearn.feature_extraction.text import TfidfVectorizer
 
-from mlxtend.frequent_patterns import apriori, association_rules
-from mlxtend.preprocessing import TransactionEncoder
+# Convert to word embeddings
+vectorizer = TfidfVectorizer()
+tf_matr = vectorizer.fit_transform(df2['cleaned_text'])
 
-# Define Transactions
-transactions = [
-    ["BREAD", "MILK", "BISCUIT", "CORNFLAKES"],
-    ["BREAD", "TEA", "BOURNVITA"],
-    ["JAM", "MAGGI", "BREAD", "MILK"],
-    ["MAGGI", "TEA", "BISCUIT"],
-    ["BREAD", "TEA", "BOURNVITA"]
-]
+# Shape of TF-IDF Matrix
+tf_matr.shape
 
-# Preprocess Transactions
-te = TransactionEncoder()
-transformed_data = te.fit(transactions).transform(transactions)
-df = pd.DataFrame(transformed_data, columns=te.columns_)
+# %%
+# Vocabulart of TF-IDF Vector
+len(vectorizer.get_feature_names_out())
 
-# Apply Apriori and Generate Rules
-frequent_itemsets = apriori(df, min_support=0.1, use_colnames=True)
-rules = association_rules(frequent_itemsets, metric="lift", min_threshold=2)
+# %%
+from sklearn.model_selection import train_test_split
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.naive_bayes import MultinomialNB
+from sklearn.metrics import accuracy_score, classification_report
 
-print("Frequent Itemsets:\n", frequent_itemsets)
-print("\nRules with Lift > 2:\n", rules[rules['lift'] > 2])
-Collaborative Filtering Recommendation Engine
-SVD-Based Recommendation System
-python
+X = df2['cleaned_text']
+y = df2['Sentiment'].apply(lambda x: get_senti(x)).apply(lambda x: 1 if x > 0.6 else 0)
 
-from surprise import SVD, Dataset, Reader
-from surprise.model_selection import train_test_split
+cvec = CountVectorizer()
+X = cvec.fit_transform(X)
 
-# Movie Metadata
-movies = pd.DataFrame({
-    "movieId": [1, 2, 3, 4, 5],
-    "title": ["Toy Story (1995)", "Jumanji (1995)", "Grumpier Old Men (1995)", "Waiting to Exhale (1995)", "Father of the Bride Part II (1995)"]
-})
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+y
 
-# Ratings Data
-ratings_data = {
-    "userId": [1, 1, 1, 2, 2, 3, 3, 3],
-    "movieId": [1, 2, 3, 1, 4, 2, 3, 5],
-    "rating": [5.0, 4.0, 3.0, 4.0, 5.0, 2.0, 4.0, 5.0]
-}
-ratings = pd.DataFrame(ratings_data)
+# %%
+# import smote
+from imblearn.over_sampling import SMOTE
+X_res, y_res = SMOTE().fit_resample(X,y)
+X_train, X_test, y_train, y_test = train_test_split(X_res, y_res, test_size=0.2, random_state=42)
+y_test.value_counts()
 
-# Load Data into Surprise
-reader = Reader(rating_scale=(0.5, 5.0))
-data = Dataset.load_from_df(ratings[['userId', 'movieId', 'rating']], reader)
+# %%
+from sklearn.linear_model import LogisticRegression
 
-# Train/Test Split
-trainset, testset = train_test_split(data, test_size=0.2, random_state=42)
-svd = SVD()
-svd.fit(trainset)
+lr = LogisticRegression()
+lr.fit(X_train, y_train)
+y_pred_lr = lr.predict(X_test)
 
-# Predict Top 5 Recommendations for User 1
-user_id = 1
-all_movie_ids = movies['movieId'].unique()
-user_rated_movies = ratings[ratings['userId'] == user_id]['movieId']
+print(classification_report(y_test, y_pred_lr))
 
-unrated_movies = [movie for movie in all_movie_ids if movie not in user_rated_movies]
-predicted_ratings = [(movie, svd.predict(user_id, movie).est) for movie in unrated_movies]
-top_5_recommendations = sorted(predicted_ratings, key=lambda x: x[1], reverse=True)[:5]
+# %%
+nb = MultinomialNB()
+nb.fit(X_train, y_train)
+y_pred_nb = nb.predict(X_test)
 
-print("Top 5 Recommendations for User 1:")
-for movie, rating in top_5_recommendations:
-    title = movies[movies['movieId'] == movie]['title'].values[0]
-    print(f"{title} - Predicted Rating: {rating:.2f}")
+print(classification_report(y_test, y_pred_nb))
+accuracy_score(y_test, y_pred_nb)
+
+# %%
+from tensorflow import keras
+from keras.preprocessing.text import Tokenizer
+from keras.preprocessing.sequence import pad_sequences
+from keras.models import Sequential
+from keras.layers import Embedding, LSTM, Dense, Dropout
+from sklearn.preprocessing import LabelEncoder
+
+# %%
+MAX_WORDS = 2500
+MAX_SEQ_LEN = 100
+
+tok = Tokenizer(num_words=MAX_WORDS)
+tok.fit_on_texts(df2['cleaned_text'])
+X_seq = tok.texts_to_sequences(df2['cleaned_text'])
+X_padded = pad_sequences(X_seq, maxlen=MAX_SEQ_LEN, padding='post')
+X_padded[:5]
+
+
+# %%
+X_train, X_test, y_train, y_test = train_test_split(X_padded, y, test_size=0.2, random_state=42)
+
+model = Sequential([
+  Embedding(input_dim=MAX_WORDS, output_dim=100, input_length=MAX_SEQ_LEN),
+  LSTM(128),
+  Dropout(0.5),
+  Dense(64, activation='relu'),
+  Dropout(0.5),
+  Dense(1, activation='sigmoid')
+])
+
+model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
+
+hist = model.fit(X_train, y_train, epochs=5, batch_size=32, validation_data=(X_test, y_test))
+loss, accuracy = model.evaluate(X_test, y_test, verbose=1)
+print('LSTM Model Accuracy: %.2f' % (accuracy*100))
+
+# %%
+from sklearn.ensemble import RandomForestClassifier 
+
+rf = RandomForestClassifier()
+
+X_train, X_test, y_train, y_test = train_test_split(X_res, y_res, test_size=0.2, random_state=42)
+
+rf.fit(X_train, y_train)
+rfy_pred = rf.predict(X_test)
+print(classification_report(y_test, rfy_pred))
+
+# %%
+# Approach 2
+
+stopwords = nltk.corpus.stopwords.words('english')
+stopwords.append(['A'])
+
+def prep_text(text):
+  # Remove accented characters
+  text = re.sub(r'[^a-zA-Z\s]', '', text)
+  # remove digits
+  text = re.sub(r'\d+', '', text)
+  # Remove punctuations
+  text = re.sub(r'[^\w\s]', '', text).lower()
+  # Remove Stopwords
+  text = ' '.join([word for word in text.split() if word not in stopwords])
+  # Remove extra spaces
+  text = re.sub(r'(\s+)', ' ', text)
+  return text
+
+df2 = df.copy()
+df2["clean_text"] = df2["Text"].apply(lambda x: prep_text(x))
+df2.head()
+word_list = []
+df2["clean_text"].apply(lambda x: [word_list.append(word) for word in x.split()])
+wl = pd.DataFrame(word_list)
+wl.value_counts()[:5]
+from wordcloud import WordCloud
+
+WordCloud().generate(str(word_list)).to_image()
+df2['tokens'] = df2['clean_text'].apply(lambda x: x.split())
+df2.head()
+
+from gensim.models import Word2Vec
+
+wvec = Word2Vec(df2['tokens'], vector_size=100, window=6, sg=1, min_count=1, workers=4)
+wvec.wv.most_similar('workout', topn=5)
+# Continuous bag of words = Skip Gram 0
+sbow = Word2Vec(df2['tokens'], vector_size=100, window=5, sg=0, min_count=1, workers=4)
+sbow.wv.most_similar('amazing',topn=5)
+from sklearn.feature_extraction.text import CountVectorizer
+
+cv = CountVectorizer()
+X_count = cv.fit_transform(df2['clean_text'])
+print(X_count.shape)
+
+list(cv.vocabulary_.keys())[:5]
+from sklearn.feature_extraction.text import TfidfVectorizer
+
+tf_vec = TfidfVectorizer()
+X_tf = tf_vec.fit_transform(df2["clean_text"])
+X_tf.shape
+
+list(tf_vec.vocabulary_.keys())[:5]
+from tensorflow import keras
+from keras.models import Sequential
+from keras.layers import Dense, Embedding, LSTM, Dropout
+from keras.preprocessing.text import Tokenizer
+from keras.preprocessing.sequence import pad_sequences
+from sklearn.preprocessing import LabelEncoder
+from sklearn.model_selection import train_test_split
+
+le = LabelEncoder()
+y = df2["Sentiment"]
+y = le.fit_transform(y)
+import numpy as np
+
+tokenizer = Tokenizer(num_words=2500)
+tokenizer.fit_on_texts(df2["clean_text"])
+X_seq = tokenizer.texts_to_sequences(df2["clean_text"])
+X_pad = pad_sequences(X_seq, maxlen=100)
+
+X_train, X_test, y_train, y_test = train_test_split(X_pad, y, test_size=0.2, random_state=42)
+model = Sequential([
+  Embedding(input_dim=2500, output_dim=100, input_length=100),
+  LSTM(128),
+  Dense(64, activation='relu'),
+  Dense(len(np.unique(y)), activation='softmax')
+])
+
+model.compile(loss='sparse_categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+hist = model.fit(X_train, y_train, epochs=10, batch_size=32, validation_data=(X_test, y_test))
+from sklearn.metrics import confusion_matrix, accuracy_score, classification_report
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+y_pred = model.predict(X_test)
+y_pred_classes = np.argmax(y_pred, axis=1)
+
+conf_matr = confusion_matrix(y_test, y_pred_classes)
+
+sns.heatmap(conf_matr, annot=True, fmt='d', cmap='Blues')
+
+
