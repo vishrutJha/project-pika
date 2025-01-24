@@ -1,310 +1,226 @@
-# %% [markdown]
-# **1a) What do you mean by NLP? List 4 real-world applications of NLP.**
-# 
-# - **NLP Definition**:
-#   - Natural Language Processing (NLP) is a branch of artificial intelligence that enables machines to understand, interpret, and generate human language in a meaningful way.
-# 
-# - **4 Real-world Applications**:
-#   1. **Sentiment Analysis**:
-#      - Example: Analyzing customer reviews to determine whether they are positive or negative.
-#   2. **Machine Translation**:
-#      - Example: Google Translate converting text from one language to another.
-#   3. **Chatbots and Virtual Assistants**:
-#      - Example: Conversational agents like ChatGPT or Alexa answering user queries.
-#   4. **Spam Email Filtering**:
-#      - Example: Gmail using NLP techniques to classify emails as spam or non-spam.
-# 
-# **1b) What are Large Language Models (LLMs)? List any four limitations/drawbacks of LLMs.**
-# 
-# - **LLMs Definition**:
-#   - Large Language Models (LLMs) are AI models with billions of parameters trained on massive datasets to understand and generate human-like text. Examples include GPT, BERT, and T5.
-# 
-# - **4 Limitations/Drawbacks**:
-#   1. **Data Bias**:
-#      - LLMs can inherit biases present in their training data, leading to biased outputs.
-#   2. **High Computational Cost**:
-#      - LLMs require significant computational resources and memory for training and inference.
-#   3. **Lack of Factual Accuracy**:
-#      - They may generate incorrect or nonsensical information confidently.
-#   4. **Ethical Concerns**:
-#      - Potential misuse for creating deepfakes, misinformation, or spam content.
-# 
-# **1c) Discuss RNN cell and its drawback. How LSTM overcomes RNN drawbacks?**
-# 
-# - **RNN (Recurrent Neural Network) Cell**:
-#   - RNNs are a type of neural network that process sequences by passing information from one time step to the next.
-#   - They are used in tasks like time-series forecasting, machine translation, and speech recognition.
-# 
-# - **Drawback of RNN**:
-#   1. **Vanishing Gradient Problem**:
-#      - RNNs struggle to retain information over long sequences due to the gradients becoming very small during backpropagation.
-#   2. **Lack of Long-Term Memory**:
-#      - They fail to capture dependencies in sequences that are far apart.
-# 
-# - **How LSTMs Overcome RNN Drawbacks**:
-#   1. **Memory Cell**:
-#      - LSTMs introduce a memory cell that can retain information over long time steps, addressing the vanishing gradient problem.
-#   2. **Gating Mechanisms**:
-#      - LSTMs use gates (input, forget, output) to control the flow of information, enabling the model to decide what to retain and what to discard.
-# 
-# **1d) Explain Named Entity Recognition (NER) with an example.**
-# 
-# - **NER Definition**:
-#   - Named Entity Recognition (NER) is an NLP technique that identifies and classifies entities in text into predefined categories such as **person names**, **locations**, **organizations**, and **dates**.
-# 
-# - **Example**:
-#   - Input Sentence: "Barack Obama was born in Hawaii in 1961."
-#   - NER Output:
-#     - `Barack Obama` → PERSON
-#     - `Hawaii` → LOCATION
-#     - `1961` → DATE
-# 
-# NER is used in applications like information extraction, resume parsing, and question-answering systems.
+# Concepts
+# Layers in Deep Learning Convolution Layer: Extracts spatial features like edges and patterns. Operates on local regions of the input using filters. Pooling Layer: Reduces spatial dimensions to decrease computation and prevent overfitting. Common types: Max Pooling, Average Pooling. Dense Layer (Fully Connected Layer): Connects all neurons to the next layer. Combines features for predictions in tasks like classification.
+# Overfitting Definition: Model performs well on training data but poorly on unseen data. Solutions: Regularization: Apply Dropout, L1/L2 regularization. Data Augmentation: Increase diversity by flipping, rotating, scaling, etc. Reduce Complexity: Use fewer neurons or layers. Early Stopping: Stop training when validation loss stops improving.
+# Vanishing Gradient Problem Definition: Gradients diminish during backpropagation, leading to poor updates in earlier layers. Solutions: Use ReLU activation instead of Sigmoid/Tanh. Batch Normalization to stabilize inputs. Residual Connections (ResNet) to skip layers and preserve gradients.
+# Object Localization vs Object Detection Object Localization: Finds the position of one object in an image using bounding boxes. Object Detection: Identifies and localizes multiple objects in an image. Example Algorithm: R-CNN. R-CNN Workflow: Region Proposal: Identify possible object regions. Feature Extraction: Use CNN on proposals. Classification: Classify objects and refine bounding boxes.
+# Activation Functions Tanh: Range: [-1, 1]. Used in hidden layers; zero-centered output simplifies optimization. ReLU (Rectified Linear Unit): Range: [0, ∞]. Efficient, avoids vanishing gradients. Softmax: Converts logits into probabilities for multi-class classification. Output range: [0, 1], with the sum of all probabilities = 1.
+# Transfer Learning Definition: Leverages pre-trained models (e.g., MobileNet, EfficientNet) for a new task. Steps: Load a pre-trained model (e.g., MobileNetV3). Freeze base layers to retain learned features. Add custom layers for the specific task (e.g., classification). Fine-tune by unfreezing top layers if needed.
+# U-Net for Semantic Segmentation Definition: A popular architecture for pixel-wise image segmentation tasks. Key Components: Encoder: Extracts features using convolutional layers. Bottleneck: Connects encoder and decoder. Decoder: Upsamples features to reconstruct the segmented output. Loss Function: Binary Crossentropy + Jaccard Loss for binary masks. Metrics: Intersection over Union (IoU): Measures overlap between predicted and true masks.
+# Dropout vs Batch Normalization Dropout: Regularization technique to prevent overfitting. Randomly deactivates neurons during training. Used in fully connected and convolutional layers. Batch Normalization: Normalizes inputs to each layer to stabilize training. Helps combat vanishing/exploding gradients. Applied after convolutional/dense layers, before activation functions.
+# Data Generators ImageDataGenerator: Dynamically loads and preprocesses batches of images. Can apply real-time augmentations like rotation, flipping, zooming, etc. Custom Data Generator: Used for tasks like segmentation, pairing images with corresponding masks.
+# Key Callbacks ModelCheckpoint: Saves the best model based on a monitored metric (e.g., validation loss). EarlyStopping: Stops training when the validation loss stops improving, avoiding overfitting. Key Metrics Loss: Measures how well the model is performing (e.g., Crossentropy, Jaccard Loss). Accuracy: Measures the percentage of correct predictions. IoU (Intersection over Union): Measures the overlap between the predicted and true regions in segmentation tasks.
 
 # %%
-import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
-import seaborn as sns
+import tensorflow as tf
+from PIL import Image
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Conv2D, MaxPool2D, Flatten, Dense, GlobalAveragePooling2D
 
-from wordcloud import WordCloud
-import nltk
+gpu_devices = tf.config.list_physical_devices('GPU')
 
-# %%
-df = pd.read_csv("reviews.csv")
-df.head()
-
-# %%
-df.duplicated().sum()
-# No duplicates
-df.drop_duplicates(inplace=True)
+if not gpu_devices:
+    print("TensorFlow is using the CPU.")
+else:
+    print(f"TensorFlow is using the following GPU(s): {gpu_devices}")
 
 # %%
-nltk.download('stopwords')
+train_dir = '3_food_classes/train/'
+test_dir = '3_food_classes/test/'
 
 # %%
-import re
+IMG_SIZE = (32,32)
+image_datagen = ImageDataGenerator(rescale=1./255)
 
-stopwords = nltk.corpus.stopwords.words('english')
-def preprocess_text(text):
-  # Remove special characters and convert to lowercase
-  text = re.sub(r'[^a-zA-Z0-9\s]','',text).lower()
-  tokens = text.split()
-  tokens = [word for word in tokens if word not in stopwords]
-  return tokens 
-
-# %%
-# Preprocess text
-# 1. remove punctuations, symbols, special characters
-df2 = pd.DataFrame(df[["Text","Sentiment"]], columns=["Text","Sentiment"])
-df2["tokens"] = df2["Text"].apply(lambda x: preprocess_text(x))
-df2.head()
-
-# %%
-df2['cleaned_text'] = df2['tokens'].apply(lambda x: ' '.join(x))
-df2.head()
+train_images = image_datagen.flow_from_directory(
+    '3_food_classes/train/',
+    target_size=IMG_SIZE,
+    color_mode='grayscale',
+    batch_size=20,
+    class_mode='categorical'
+)
+test_images = image_datagen.flow_from_directory(
+    '3_food_classes/test/',
+    target_size=IMG_SIZE,
+    color_mode='grayscale',
+    batch_size=20,
+    class_mode='categorical'
+)
 
 # %%
-!pip install textblob
+from keras.layers import Dense, Conv2D, MaxPooling2D
+
+base_model = Sequential([
+  Conv2D(32, (3,3), activation='relu', input_shape=(*IMG_SIZE, 1)),
+  MaxPooling2D(2,2),
+  Flatten(),
+  Dense(32, activation='relu'),
+  Dense(3, activation='softmax')
+])
+
+base_model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
+base_model.summary()
 
 # %%
-from textblob import TextBlob
-
-def get_senti(text):
-  blob = TextBlob(text)
-  return blob.sentiment.polarity
+base_model.fit(train_images, epochs=10, validation_data=test_images)
 
 # %%
-from sklearn.feature_extraction.text import TfidfVectorizer
+IMG_SIZE=(128,128)
 
-# Convert to word embeddings
-vectorizer = TfidfVectorizer()
-tf_matr = vectorizer.fit_transform(df2['cleaned_text'])
+datagen = ImageDataGenerator(
+  rescale=1./255,
+  shear_range=0.2,
+  zoom_range=0.2,
+  horizontal_flip=True,
+  rotation_range=90
+)
 
-# Shape of TF-IDF Matrix
-tf_matr.shape
+# Go for color images
+train_data = datagen.flow_from_directory(
+    train_dir,
+    target_size=IMG_SIZE,
+    batch_size=32,
+    class_mode='categorical'
+)
+
+test_data = image_datagen.flow_from_directory(
+    test_dir,
+    target_size=IMG_SIZE,
+    batch_size=32,
+    class_mode='categorical'
+)
 
 # %%
-# Vocabulart of TF-IDF Vector
-len(vectorizer.get_feature_names_out())
+from keras.layers import Dropout, BatchNormalization
+
+improved_model = Sequential([
+  Conv2D(64, (3,3), activation='relu', input_shape=(*IMG_SIZE, 3)),
+  MaxPooling2D(2,2),
+
+  Conv2D(64, (3,3), activation='relu'),
+  MaxPooling2D(2,2),
+
+  Conv2D(128, (3,3), activation='relu'),
+  MaxPooling2D(2,2),
+
+  Flatten(),
+  Dense(128, activation='relu'),
+  Dropout(0.25),
+  Dense(3, activation='softmax')
+])
+
+improved_model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
+improved_model.summary()
+
+# %%
+from keras.callbacks import EarlyStopping
+es = EarlyStopping(monitor='val_accuracy', mode='max', verbose=1, patience=5, restore_best_weights=True)
+history = improved_model.fit(train_data, epochs=5, validation_data=test_data, callbacks=[es])
+
+# %%
+print(f'Best score : {max(history.history['val_accuracy'])}')
+es.best_weights
+
+# %%
+IMG_SIZE = (128,128)
+
+train_data = ImageDataGenerator(
+  rescale=1./255,
+  shear_range=0.2,
+  zoom_range=0.2,
+  horizontal_flip=True
+).flow_from_directory(
+  train_dir,
+  target_size=IMG_SIZE,
+  batch_size=32,
+  class_mode='categorical'
+)
+
+test_data = ImageDataGenerator(rescale=1./255).flow_from_directory(
+  test_dir,
+  target_size=IMG_SIZE,
+  batch_size=32,
+  class_mode='categorical'
+)
+
+# %%
+from keras.applications import MobileNetV3Small
+cust_model = MobileNetV3Small(input_shape=(*IMG_SIZE,3), weights=None)
+# cust_model = ResNet50(input_shape=(*IMG_SIZE,3), weights='imagenet', include_top=False)
+cust_model.trainable = False
+
+new_model = Sequential([
+    cust_model,
+    Flatten(),
+    Dense(64, activation='relu'),
+    Dense(3, activation='softmax')
+])
+
+new_model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
+
+new_model.summary()
+
+# %%
+history = improved_model.fit(train_data, epochs=5, validation_data=test_data, callbacks=[es])
+
+# %%
+es.best
+
+# %%
+from keras.preprocessing.image import load_img, img_to_array
+
+def load_images(folder, shape):
+  images = []
+  for filename in os.listdir(folder):
+    img_path = os.path.join(folder, filename)
+    img = load_img(img_path, target_size=shape)
+    img = img_to_array(img)
+    images.append(img)
+  return np.array(images)
+
+def show_image(image, mask):
+  plt.imshow(image)
+  plt.imshow(mask, alpha=0.5)
+  plt.show()
+
+# %%
+base_dir = "../Unet_Dataset/"
+images = load_images(base_dir+"images", (128,128))
+masks = load_images(base_dir+"MASKS_BW", (128,128))
+
+images = images/255.0
+masks = masks/255.0
+
+masks = np.expand_dims(masks[...,0], axis=-1)
+
+show_image(images[0], masks[0])
+masks.shape
 
 # %%
 from sklearn.model_selection import train_test_split
-from sklearn.feature_extraction.text import CountVectorizer
-from sklearn.naive_bayes import MultinomialNB
-from sklearn.metrics import accuracy_score, classification_report
 
-X = df2['cleaned_text']
-y = df2['Sentiment'].apply(lambda x: get_senti(x)).apply(lambda x: 1 if x > 0.6 else 0)
-
-cvec = CountVectorizer()
-X = cvec.fit_transform(X)
-
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-y
+X_train, X_test, y_train, y_test = train_test_split(images, masks, test_size=0.2, random_state=42)
 
 # %%
-# import smote
-from imblearn.over_sampling import SMOTE
-X_res, y_res = SMOTE().fit_resample(X,y)
-X_train, X_test, y_train, y_test = train_test_split(X_res, y_res, test_size=0.2, random_state=42)
-y_test.value_counts()
+os.environ['SM_FRAMEWORK'] = "tf.keras"
+import segmentation_models as sm
 
 # %%
-from sklearn.linear_model import LogisticRegression
-
-lr = LogisticRegression()
-lr.fit(X_train, y_train)
-y_pred_lr = lr.predict(X_test)
-
-print(classification_report(y_test, y_pred_lr))
+model = sm.Unet('resnet34', encoder_weights='imagenet', input_shape=(*IMG_SIZE,3), classes=1, activation='sigmoid')
+preprocess_input = sm.get_preprocessing('resnet34')
 
 # %%
-nb = MultinomialNB()
-nb.fit(X_train, y_train)
-y_pred_nb = nb.predict(X_test)
-
-print(classification_report(y_test, y_pred_nb))
-accuracy_score(y_test, y_pred_nb)
+model.compile(loss='binary_crossentropy', optimizer='adam', metrics=[sm.metrics.iou_score])
 
 # %%
-from tensorflow import keras
-from keras.preprocessing.text import Tokenizer
-from keras.preprocessing.sequence import pad_sequences
-from keras.models import Sequential
-from keras.layers import Embedding, LSTM, Dense, Dropout
-from sklearn.preprocessing import LabelEncoder
+X_train = preprocess_input(X_train)
+X_test = preprocess_input(X_test)
+model.fit(X_train, y_train, validation_data=(X_test, y_test), epochs=5, batch_size=5, verbose=True)
 
 # %%
-MAX_WORDS = 2500
-MAX_SEQ_LEN = 100
-
-tok = Tokenizer(num_words=MAX_WORDS)
-tok.fit_on_texts(df2['cleaned_text'])
-X_seq = tok.texts_to_sequences(df2['cleaned_text'])
-X_padded = pad_sequences(X_seq, maxlen=MAX_SEQ_LEN, padding='post')
-X_padded[:5]
-
+pred_set = model.predict(X_test)
 
 # %%
-X_train, X_test, y_train, y_test = train_test_split(X_padded, y, test_size=0.2, random_state=42)
-
-model = Sequential([
-  Embedding(input_dim=MAX_WORDS, output_dim=100, input_length=MAX_SEQ_LEN),
-  LSTM(128),
-  Dropout(0.5),
-  Dense(64, activation='relu'),
-  Dropout(0.5),
-  Dense(1, activation='sigmoid')
-])
-
-model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['accuracy'])
-
-hist = model.fit(X_train, y_train, epochs=5, batch_size=32, validation_data=(X_test, y_test))
-loss, accuracy = model.evaluate(X_test, y_test, verbose=1)
-print('LSTM Model Accuracy: %.2f' % (accuracy*100))
-
-# %%
-from sklearn.ensemble import RandomForestClassifier 
-
-rf = RandomForestClassifier()
-
-X_train, X_test, y_train, y_test = train_test_split(X_res, y_res, test_size=0.2, random_state=42)
-
-rf.fit(X_train, y_train)
-rfy_pred = rf.predict(X_test)
-print(classification_report(y_test, rfy_pred))
-
-# %%
-# Approach 2
-
-stopwords = nltk.corpus.stopwords.words('english')
-stopwords.append(['A'])
-
-def prep_text(text):
-  # Remove accented characters
-  text = re.sub(r'[^a-zA-Z\s]', '', text)
-  # remove digits
-  text = re.sub(r'\d+', '', text)
-  # Remove punctuations
-  text = re.sub(r'[^\w\s]', '', text).lower()
-  # Remove Stopwords
-  text = ' '.join([word for word in text.split() if word not in stopwords])
-  # Remove extra spaces
-  text = re.sub(r'(\s+)', ' ', text)
-  return text
-
-df2 = df.copy()
-df2["clean_text"] = df2["Text"].apply(lambda x: prep_text(x))
-df2.head()
-word_list = []
-df2["clean_text"].apply(lambda x: [word_list.append(word) for word in x.split()])
-wl = pd.DataFrame(word_list)
-wl.value_counts()[:5]
-from wordcloud import WordCloud
-
-WordCloud().generate(str(word_list)).to_image()
-df2['tokens'] = df2['clean_text'].apply(lambda x: x.split())
-df2.head()
-
-from gensim.models import Word2Vec
-
-wvec = Word2Vec(df2['tokens'], vector_size=100, window=6, sg=1, min_count=1, workers=4)
-wvec.wv.most_similar('workout', topn=5)
-# Continuous bag of words = Skip Gram 0
-sbow = Word2Vec(df2['tokens'], vector_size=100, window=5, sg=0, min_count=1, workers=4)
-sbow.wv.most_similar('amazing',topn=5)
-from sklearn.feature_extraction.text import CountVectorizer
-
-cv = CountVectorizer()
-X_count = cv.fit_transform(df2['clean_text'])
-print(X_count.shape)
-
-list(cv.vocabulary_.keys())[:5]
-from sklearn.feature_extraction.text import TfidfVectorizer
-
-tf_vec = TfidfVectorizer()
-X_tf = tf_vec.fit_transform(df2["clean_text"])
-X_tf.shape
-
-list(tf_vec.vocabulary_.keys())[:5]
-from tensorflow import keras
-from keras.models import Sequential
-from keras.layers import Dense, Embedding, LSTM, Dropout
-from keras.preprocessing.text import Tokenizer
-from keras.preprocessing.sequence import pad_sequences
-from sklearn.preprocessing import LabelEncoder
-from sklearn.model_selection import train_test_split
-
-le = LabelEncoder()
-y = df2["Sentiment"]
-y = le.fit_transform(y)
-import numpy as np
-
-tokenizer = Tokenizer(num_words=2500)
-tokenizer.fit_on_texts(df2["clean_text"])
-X_seq = tokenizer.texts_to_sequences(df2["clean_text"])
-X_pad = pad_sequences(X_seq, maxlen=100)
-
-X_train, X_test, y_train, y_test = train_test_split(X_pad, y, test_size=0.2, random_state=42)
-model = Sequential([
-  Embedding(input_dim=2500, output_dim=100, input_length=100),
-  LSTM(128),
-  Dense(64, activation='relu'),
-  Dense(len(np.unique(y)), activation='softmax')
-])
-
-model.compile(loss='sparse_categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
-hist = model.fit(X_train, y_train, epochs=10, batch_size=32, validation_data=(X_test, y_test))
-from sklearn.metrics import confusion_matrix, accuracy_score, classification_report
-import seaborn as sns
-import matplotlib.pyplot as plt
-
-y_pred = model.predict(X_test)
-y_pred_classes = np.argmax(y_pred, axis=1)
-
-conf_matr = confusion_matrix(y_test, y_pred_classes)
-
-sns.heatmap(conf_matr, annot=True, fmt='d', cmap='Blues')
+show_image(X_test[0], pred_set[0].squeeze())
 
 
